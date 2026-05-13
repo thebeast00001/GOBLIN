@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, GraduationCap, Brain, PlayCircle, X, Settings as SettingsIcon, Save, Send, Clock, Pin, PinOff, Plus, Trash2, Copy, Check, Camera, Image as ImageIcon, Paperclip, FileText, Clapperboard, Network, Scissors } from 'lucide-react';
+import { MessageCircle, GraduationCap, Brain, PlayCircle, X, Settings as SettingsIcon, Save, Send, Clock, Pin, PinOff, Plus, Trash2, Copy, Check, Camera, Image as ImageIcon, Paperclip, FileText, Clapperboard, Network, Scissors, ShieldCheck } from 'lucide-react';
 import { getYouTubeTranscript, getYouTubeMetadata, formatTime } from './youtubeUtils';
 import { chatWithVideo, performWebSearch } from './aiUtils';
 import { parseDocument } from './documentParser';
@@ -177,7 +177,10 @@ export const Sidebar: React.FC = () => {
           <button onClick={() => { setActiveTab('chat'); setCurrentChatId(null); }} className="p-2 hover:bg-neutral-800 hover:text-white rounded-full transition-all duration-300 text-neutral-400" title="New Chat">
             <Plus size={20} />
           </button>
-          <button onClick={() => setActiveTab('settings')} className={`p-2 rounded-full transition-all duration-300 ${activeTab === 'settings' ? 'bg-neutral-800 text-red-500' : 'text-neutral-400 hover:bg-neutral-800 hover:text-white'}`}>
+          <button onClick={() => setActiveTab('history')} className={`p-2 rounded-full transition-all duration-300 ${activeTab === 'history' ? 'bg-neutral-800 text-white' : 'text-neutral-400 hover:bg-neutral-800 hover:text-white'}`} title="Chat History">
+            <Clock size={20} />
+          </button>
+          <button onClick={() => setActiveTab('settings')} className={`p-2 rounded-full transition-all duration-300 ${activeTab === 'settings' ? 'bg-neutral-800 text-white' : 'text-neutral-400 hover:bg-neutral-800 hover:text-white'}`} title="Settings">
             <SettingsIcon size={20} />
           </button>
           <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-neutral-800 hover:text-white rounded-full transition-all duration-300 text-neutral-400">
@@ -646,16 +649,71 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                 {msg.role === 'user' ? (
                   <p className="text-[14px] leading-relaxed whitespace-pre-wrap">
                     {(() => {
-                      // Hide the system prompt brackets from the user's view
+                      // Hide the system prompt brackets from the user's view, but don't break timestamp tags like [01:23]
                       if (msg.text.startsWith('[')) {
                         const match = msg.text.match(/^\[(.*?)\]/);
-                        if (match) return match[1]; // Just show "DIRECTOR MODE" or "CUT THE FLUFF"
+                        if (match) {
+                          const tag = match[1];
+                          // If it's an AI prompt command (usually all caps or containing MODE/MAP), hide the huge text
+                          if (tag.includes('MODE') || tag.includes('MAP') || tag.includes('FACT CHECK') || tag === 'CUT THE FLUFF' || tag === 'EXTRACT CHECKLIST' || tag === 'EXPLAIN LIKE I AM 5') {
+                            return tag;
+                          }
+                        }
                       }
                       return msg.text;
                     })()}
                   </p>
                 ) : (
-                  <ReactMarkdown
+                  <>
+                    {(() => {
+                      if (msg.text.includes('[FACT_CHECK_JSON]')) {
+                        try {
+                          // Try to match with closing tag first, fallback to end of string
+                          const match = msg.text.match(/\[FACT_CHECK_JSON\]([\s\S]*?)(?:\[\/FACT_CHECK_JSON\]|$)/);
+                          if (match && match[1]) {
+                            // Clean up any trailing characters like commas or backticks that the AI might have accidentally added
+                            const jsonString = match[1].trim().replace(/,$/, '').replace(/^```json/, '').replace(/```$/, '');
+                            const data = JSON.parse(jsonString);
+                            return (
+                              <div className="bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden mt-2 mb-4 shadow-sm w-full min-w-[280px]">
+                                <div className={`p-3 border-b ${data.verdict === 'TRUE' ? 'bg-green-500/10 border-green-500/20 text-green-400' : data.verdict === 'FALSE' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'} flex items-center justify-between`}>
+                                  <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px]">
+                                    <ShieldCheck size={14} /> {data.verdict} VERDICT
+                                  </div>
+                                </div>
+                                <div className="p-4 space-y-4">
+                                  <div>
+                                    <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block mb-1">Verifiable Claim</span>
+                                    <p className="text-white text-[13px] font-semibold italic border-l-2 border-neutral-700 pl-3 py-1">"{data.claim}"</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block mb-1">Grounded Truth</span>
+                                    <p className="text-neutral-300 text-[13px] leading-relaxed">{data.truth}</p>
+                                  </div>
+                                  {data.sources && data.sources.length > 0 && (
+                                    <div className="pt-3 border-t border-neutral-800/50">
+                                      <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider block mb-2">Verified Sources</span>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {data.sources.map((s: string, i: number) => {
+                                          try {
+                                            const domain = new URL(s).hostname.replace('www.', '');
+                                            return <a key={i} href={s} target="_blank" rel="noreferrer" className="text-[10px] text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-2 py-0.5 rounded-full truncate max-w-[150px] inline-flex transition-all">{domain}</a>;
+                                          } catch(e) { return null; }
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                        } catch (e) {
+                          console.error("Failed to parse fact check JSON", e);
+                        }
+                      }
+                      return null;
+                    })()}
+                    <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
                       p: ({node, ...props}) => <p className="text-[14px] leading-relaxed mb-3 last:mb-0 text-neutral-300" {...props}/>,
@@ -702,8 +760,9 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                       td: ({node, ...props}) => <td className="border-b border-neutral-800 p-3 text-neutral-300 bg-neutral-950" {...props}/>,
                     }}
                   >
-                    {msg.text.replace(/\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?/g, '[$1](#timestamp_$1)')}
+                    {msg.text.replace(/\[FACT_CHECK_JSON\][\s\S]*?\[\/FACT_CHECK_JSON\]/g, '').replace(/\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?/g, '[$1](#timestamp_$1)')}
                   </ReactMarkdown>
+                  </>
                 )}
               </div>
               {msg.role === 'assistant' && <MessageCopyButton text={msg.text} />}
@@ -906,6 +965,23 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                   className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-red-500 hover:bg-neutral-800 rounded-lg transition-all text-left"
                 >
                   <Scissors size={16} /> Auto-Shorts Mode
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    stopPropagation(e);
+                    const video = document.querySelector('video');
+                    let timeContext = '';
+                    if (video) {
+                      timeContext = `The user is currently at timestamp [${formatTime(video.currentTime)}].`;
+                    }
+                    handleSend(`[FACT CHECK] ${timeContext} Identify the most prominent factual claim being made right now. You MUST output a web search query in the format [SEARCH: "the claim"] to verify it. When you receive the search results, you MUST format your response EXACTLY like this:\n\n[FACT_CHECK_JSON]\n{"claim": "the exact claim", "verdict": "TRUE" | "FALSE" | "NEEDS CONTEXT", "truth": "actual truth", "sources": ["url1"]}\n[/FACT_CHECK_JSON]\n\nDo NOT output anything else.`);
+                    setShowActions(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-green-400 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                >
+                  <ShieldCheck size={16} /> Fact Check Segment
                 </button>
 
                 <button 
