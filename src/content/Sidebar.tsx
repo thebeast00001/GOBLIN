@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, GraduationCap, Brain, PlayCircle, X, Settings as SettingsIcon, Save, Send, Clock, Pin, PinOff, Plus, Trash2, Copy, Check, Camera, Image as ImageIcon, Paperclip, FileText, Clapperboard, Network, Scissors, ShieldCheck } from 'lucide-react';
+import { MessageCircle, GraduationCap, Brain, PlayCircle, X, Settings as SettingsIcon, Save, Send, Clock, Pin, PinOff, Plus, Trash2, Copy, Check, Camera, Image as ImageIcon, Paperclip, FileText, Clapperboard, Network, Scissors, ShieldCheck, Link } from 'lucide-react';
 import { getYouTubeTranscript, getYouTubeMetadata, formatTime } from './youtubeUtils';
 import { chatWithVideo, performWebSearch } from './aiUtils';
 import { parseDocument } from './documentParser';
@@ -655,7 +655,7 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                         if (match) {
                           const tag = match[1];
                           // If it's an AI prompt command (usually all caps or containing MODE/MAP), hide the huge text
-                          if (tag.includes('MODE') || tag.includes('MAP') || tag.includes('FACT CHECK') || tag === 'CUT THE FLUFF' || tag === 'EXTRACT CHECKLIST' || tag === 'EXPLAIN LIKE I AM 5') {
+                          if (tag.includes('MODE') || tag.includes('MAP') || tag.includes('FACT CHECK') || tag.includes('EXTRACT RESOURCES') || tag === 'CUT THE FLUFF' || tag === 'EXTRACT CHECKLIST' || tag === 'EXPLAIN LIKE I AM 5') {
                             return tag;
                           }
                         }
@@ -711,6 +711,50 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                           console.error("Failed to parse fact check JSON", e);
                         }
                       }
+                      
+                      if (msg.text.includes('[RESOURCES_JSON]')) {
+                        try {
+                          const match = msg.text.match(/\[RESOURCES_JSON\]([\s\S]*?)(?:\[\/RESOURCES_JSON\]|$)/);
+                          if (match && match[1]) {
+                            const jsonString = match[1].trim().replace(/,$/, '').replace(/^```json/, '').replace(/```$/, '');
+                            const data = JSON.parse(jsonString);
+                            return (
+                              <div className="bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden mt-2 mb-4 shadow-sm w-full min-w-[280px]">
+                                <div className="p-3 border-b bg-blue-500/10 border-blue-500/20 text-blue-400 flex items-center justify-between">
+                                  <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px]">
+                                    <Link size={14} /> EXTRACTED RESOURCES
+                                  </div>
+                                </div>
+                                <div className="p-4 space-y-4">
+                                  {data.categories?.map((cat: any, idx: number) => (
+                                    <div key={idx}>
+                                      <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block mb-2">{cat.name}</span>
+                                      <div className="space-y-2">
+                                        {cat.items?.map((item: any, i2: number) => (
+                                          <div key={i2} className="bg-neutral-950 p-2.5 rounded-lg border border-neutral-800/50">
+                                            <div className="flex items-center justify-between mb-1">
+                                              <span className="text-white text-[13px] font-semibold">{item.name}</span>
+                                              {item.url && (
+                                                <a href={item.url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300">
+                                                  <Link size={12} />
+                                                </a>
+                                              )}
+                                            </div>
+                                            <p className="text-neutral-400 text-[11px] leading-relaxed">{item.context}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                        } catch (e) {
+                          console.error("Failed to parse resources JSON", e);
+                        }
+                      }
+
                       return null;
                     })()}
                     <ReactMarkdown
@@ -760,7 +804,7 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                       td: ({node, ...props}) => <td className="border-b border-neutral-800 p-3 text-neutral-300 bg-neutral-950" {...props}/>,
                     }}
                   >
-                    {msg.text.replace(/\[FACT_CHECK_JSON\][\s\S]*?\[\/FACT_CHECK_JSON\]/g, '').replace(/\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?/g, '[$1](#timestamp_$1)')}
+                    {msg.text.replace(/\[FACT_CHECK_JSON\][\s\S]*?\[\/FACT_CHECK_JSON\]/g, '').replace(/\[RESOURCES_JSON\][\s\S]*?\[\/RESOURCES_JSON\]/g, '').replace(/\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?/g, '[$1](#timestamp_$1)')}
                   </ReactMarkdown>
                   </>
                 )}
@@ -994,6 +1038,18 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                   className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-blue-500 hover:bg-neutral-800 rounded-lg transition-all text-left"
                 >
                   <Network size={16} /> Mind Mapper
+                </button>
+                
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    stopPropagation(e);
+                    handleSend('[EXTRACT RESOURCES] Scan the entire video transcript. Find every single book, tool, software, website, or product mentioned by the creator. Format your response EXACTLY like this:\n\n[RESOURCES_JSON]\n{"categories": [{"name": "Books", "items": [{"name": "Book Title", "context": "Why it was mentioned", "url": "https://example.com"}]}]}\n[/RESOURCES_JSON]\n\nDo NOT output markdown outside of the JSON block.');
+                    setShowActions(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-purple-400 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                >
+                  <Link size={16} /> Extract Resources
                 </button>
               </div>
             </div>
