@@ -942,7 +942,12 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
               </button>
 
               {/* Pop-up Actions Menu */}
-              <div className={`absolute bottom-full left-0 mb-3 bg-neutral-900 border border-neutral-700 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] p-2 flex flex-col gap-1 min-w-[200px] transition-all origin-bottom-left z-50 ${showActions ? 'opacity-100 scale-100 visible pointer-events-auto' : 'opacity-0 scale-95 invisible pointer-events-none'}`}>
+              <div className={`absolute bottom-full left-0 mb-3 bg-neutral-900/95 backdrop-blur-xl border border-neutral-700/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] p-2 flex flex-col gap-1 w-[240px] transition-all origin-bottom-left z-50 ${showActions ? 'opacity-100 scale-100 visible pointer-events-auto translate-y-0' : 'opacity-0 scale-95 invisible pointer-events-none translate-y-2'}`}>
+                
+                <div className="px-3 py-1.5 mb-1">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Media</span>
+                </div>
+
                 <button 
                   type="button"
                   onClick={(e) => {
@@ -964,13 +969,15 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                     }
                     setShowActions(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-blue-400 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-xl transition-all text-left group"
                 >
-                  <Camera size={16} /> Capture Screen
+                  <div className="p-1.5 bg-neutral-800 rounded-md group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors"><Camera size={14} /></div>
+                  Capture Screen
                 </button>
 
-                <label className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-purple-400 hover:bg-neutral-800 rounded-lg transition-all text-left cursor-pointer">
-                  <Paperclip size={16} /> Attach Document
+                <label className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-xl transition-all text-left cursor-pointer group">
+                  <div className="p-1.5 bg-neutral-800 rounded-md group-hover:bg-purple-500/20 group-hover:text-purple-400 transition-colors"><Paperclip size={14} /></div>
+                  Attach Document
                   <input 
                     type="file" 
                     className="hidden" 
@@ -994,24 +1001,10 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                   />
                 </label>
 
-                  <div className="h-[1px] w-full bg-neutral-800 my-1"></div>
-
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    stopPropagation(e);
-                    const video = document.querySelector('video');
-                    if (video) {
-                      const timeStr = formatTime(video.currentTime);
-                      const prefix = input.length > 0 && !input.endsWith(' ') ? ' ' : '';
-                      setInput(prev => prev + prefix + `[${timeStr}] `);
-                    }
-                    setShowActions(false);
-                  }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg transition-all text-left"
-                >
-                  <Clock size={16} /> Insert Timestamp
-                </button>
+                <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-neutral-700/50 to-transparent my-1"></div>
+                <div className="px-3 py-1.5 mt-1">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Agent Workflows</span>
+                </div>
 
                 <button 
                   type="button"
@@ -1020,9 +1013,10 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                     handleSend('[DIRECTOR MODE] Analyze the transcript and generate a chronological interactive playlist of the most important moments. Format exactly as a Markdown Table with columns: Time (must use [MM:SS] format), Topic, Detail, and Relevance (🔥). No filler text.');
                     setShowActions(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-yellow-400 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-xl transition-all text-left group"
                 >
-                  <Clapperboard size={16} /> Director Mode
+                  <div className="p-1.5 bg-neutral-800 rounded-md group-hover:bg-yellow-500/20 group-hover:text-yellow-400 transition-colors"><Clapperboard size={14} /></div>
+                  Director Mode
                 </button>
 
                 <button 
@@ -1032,9 +1026,10 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                     handleSend('[AUTO-SHORTS MODE] Generate an autonomous highlight reel playlist for the most important parts of this video. You must output a JSON array of objects inside a [GOD_MODE_JSON] block. Example: [GOD_MODE_JSON][{"start": 12, "end": 45, "topic": "Intro"}, {"start": 120, "end": 200, "topic": "Core Concept"}][/GOD_MODE_JSON]. Only include highly relevant segments. Keep the array under 10 items.');
                     setShowActions(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-red-500 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-xl transition-all text-left group"
                 >
-                  <Scissors size={16} /> Auto-Shorts Mode
+                  <div className="p-1.5 bg-neutral-800 rounded-md group-hover:bg-orange-500/20 group-hover:text-orange-400 transition-colors"><Scissors size={14} /></div>
+                  Auto-Shorts
                 </button>
 
                 <button 
@@ -1049,9 +1044,10 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                     handleSend(`[FACT CHECK] ${timeContext} Identify the most prominent factual claim being made right now. You MUST output a web search query in the format [SEARCH: "the claim"] to verify it. When you receive the search results, you MUST format your response EXACTLY like this:\n\n[FACT_CHECK_JSON]\n{"claim": "the exact claim", "verdict": "TRUE" | "FALSE" | "NEEDS CONTEXT", "truth": "actual truth", "sources": ["url1"]}\n[/FACT_CHECK_JSON]\n\nDo NOT output anything else.`);
                     setShowActions(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-green-400 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-xl transition-all text-left group"
                 >
-                  <ShieldCheck size={16} /> Fact Check Segment
+                  <div className="p-1.5 bg-neutral-800 rounded-md group-hover:bg-green-500/20 group-hover:text-green-400 transition-colors"><ShieldCheck size={14} /></div>
+                  Fact Check Truth
                 </button>
 
                 <button 
@@ -1061,9 +1057,10 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                     handleSend('[MIND MAP] Generate a visual knowledge graph of the concepts in this video. You must output a JSON object inside a [MIND_MAP_JSON] block. Example: [MIND_MAP_JSON]{"nodes": [{"id": "n1", "label": "Topic 1"}, {"id": "n2", "label": "Topic 2"}], "links": [{"source": "n1", "target": "n2"}]}[/MIND_MAP_JSON]. Ensure links reference valid node IDs. Create a comprehensive map of 10-20 nodes.');
                     setShowActions(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-blue-500 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-xl transition-all text-left group"
                 >
-                  <Network size={16} /> Mind Mapper
+                  <div className="p-1.5 bg-neutral-800 rounded-md group-hover:bg-blue-500/20 group-hover:text-blue-500 transition-colors"><Network size={14} /></div>
+                  Generate Mind Map
                 </button>
                 
                 <button 
@@ -1073,9 +1070,10 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
                     handleSend('[EXTRACT RESOURCES] Scan the entire video transcript. Find every single book, tool, software, website, or product mentioned by the creator. Format your response EXACTLY like this:\n\n[RESOURCES_JSON]\n{"categories": [{"name": "Books", "items": [{"name": "Book Title", "context": "Why it was mentioned", "url": "https://example.com"}]}]}\n[/RESOURCES_JSON]\n\nDo NOT output markdown outside of the JSON block.');
                     setShowActions(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-neutral-300 hover:text-purple-400 hover:bg-neutral-800 rounded-lg transition-all text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800/80 rounded-xl transition-all text-left group"
                 >
-                  <Link size={16} /> Extract Resources
+                  <div className="p-1.5 bg-neutral-800 rounded-md group-hover:bg-purple-500/20 group-hover:text-purple-400 transition-colors"><Link size={14} /></div>
+                  Extract Resources
                 </button>
               </div>
             </div>
