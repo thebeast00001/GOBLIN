@@ -124,9 +124,13 @@ export const MindMapGraph: React.FC<MindMapProps> = ({ data }) => {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-neutral-950 overflow-hidden rounded-xl border border-neutral-800">
+    <div ref={containerRef} className="relative w-full h-full bg-[#050505] overflow-hidden rounded-xl border border-neutral-800">
+      {/* Blueprint Grid Background */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#050505_100%)] pointer-events-none z-0"></div>
+
       {/* Draw Links (SVG) */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">
         {data.links.map((link, i) => {
           const source = positions[link.source];
           const target = positions[link.target];
@@ -138,14 +142,20 @@ export const MindMapGraph: React.FC<MindMapProps> = ({ data }) => {
               y1={source.y}
               x2={target.x}
               y2={target.y}
-              stroke="rgba(239, 68, 68, 0.2)"
-              strokeWidth="2"
+              stroke="url(#lineGradient)"
+              strokeWidth="1.5"
               initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 1, delay: i * 0.1 }}
+              animate={{ pathLength: 1, opacity: 0.6 }}
+              transition={{ duration: 1.5, delay: i * 0.1, ease: "easeOut" }}
             />
           );
         })}
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#EF4444" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#F97316" stopOpacity="0.2" />
+          </linearGradient>
+        </defs>
       </svg>
 
       {/* Draw Nodes */}
@@ -158,7 +168,7 @@ export const MindMapGraph: React.FC<MindMapProps> = ({ data }) => {
         return (
           <motion.div
             key={node.id}
-            className={`absolute flex items-center justify-center p-3 rounded-xl shadow-lg z-10 cursor-pointer backdrop-blur-md ${isRoot ? 'bg-red-600 border-red-500 text-white font-bold scale-110 shadow-red-900/50' : 'bg-neutral-900/90 border border-neutral-700 text-neutral-200 hover:border-red-500 hover:text-white'}`}
+            className={`absolute flex items-center justify-center p-3 rounded-xl shadow-xl z-10 cursor-grab active:cursor-grabbing backdrop-blur-xl transition-colors ${isRoot ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400/50 text-white font-bold scale-110 shadow-[0_0_25px_rgba(239,68,68,0.4)]' : 'bg-[#111]/90 border border-neutral-700/80 text-neutral-300 hover:border-red-500/80 hover:text-white hover:bg-neutral-900 shadow-[0_4px_15px_rgba(0,0,0,0.5)]'}`}
             style={{ 
               left: pos.x, 
               top: pos.y,
@@ -176,7 +186,8 @@ export const MindMapGraph: React.FC<MindMapProps> = ({ data }) => {
               }));
             }}
           >
-            <span className="text-xs text-center max-w-[120px] font-semibold">{node.label}</span>
+            {isRoot && <div className="absolute inset-0 rounded-xl border-2 border-red-500 animate-[ping_3s_ease-out_infinite] opacity-20 pointer-events-none"></div>}
+            <span className="text-[11px] text-center max-w-[130px] font-semibold tracking-wide leading-tight">{node.label}</span>
           </motion.div>
         );
       })}
