@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <div className="flex-1 p-6 flex flex-col items-center justify-center text-center space-y-4">
         <BookOpen size={48} className="text-indigo-400 opacity-80" />
         <div>
-          <h2 className="font-semibold text-lg">YouTube Learn Mode</h2>
+          <h2 className="font-semibold text-lg">GOBLIN</h2>
           <p className="text-sm text-slate-400 mt-2">
             Open any YouTube video to start taking smart notes, generating quizzes, and tracking your progress.
           </p>

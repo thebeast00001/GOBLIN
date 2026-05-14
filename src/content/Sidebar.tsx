@@ -43,6 +43,11 @@ export const Sidebar: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number, startY: number, initialX: number, initialY: number } | null>(null);
 
+  // Draggable Toggle State
+  const [togglePosition, setTogglePosition] = useState({ x: window.innerWidth - 60, y: 100 });
+  const [isDraggingToggle, setIsDraggingToggle] = useState(false);
+  const toggleDragRef = useRef<{ startX: number, startY: number, initialX: number, initialY: number, dragged: boolean } | null>(null);
+
   useEffect(() => {
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.local.get(['goblin_ai_settings', 'goblin_chat_history'], (result) => {
@@ -104,14 +109,55 @@ export const Sidebar: React.FC = () => {
   };
 
   if (!isOpen) {
+    const safeToggleX = Math.max(0, Math.min(togglePosition.x, window.innerWidth - 50));
+    const safeToggleY = Math.max(0, Math.min(togglePosition.y, window.innerHeight - 100));
+
     return (
-      <div className="fixed top-24 right-4 z-[9999]">
-        <button onClick={() => setIsOpen(true)} className="bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-white font-semibold py-3 px-3 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.8)] transition-all flex flex-col items-center gap-3 group">
+      <div 
+        className="fixed z-[9999] cursor-grab active:cursor-grabbing touch-none"
+        style={{ left: safeToggleX, top: safeToggleY }}
+        onPointerDown={(e) => {
+          setIsDraggingToggle(true);
+          toggleDragRef.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            initialX: togglePosition.x,
+            initialY: togglePosition.y,
+            dragged: false
+          };
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!isDraggingToggle || !toggleDragRef.current) return;
+          const dx = e.clientX - toggleDragRef.current.startX;
+          const dy = e.clientY - toggleDragRef.current.startY;
+          
+          if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            toggleDragRef.current.dragged = true;
+          }
+
+          setTogglePosition({
+            x: Math.max(0, Math.min(window.innerWidth - 50, toggleDragRef.current.initialX + dx)),
+            y: Math.max(0, Math.min(window.innerHeight - 100, toggleDragRef.current.initialY + dy))
+          });
+        }}
+        onPointerUp={(e) => {
+          setIsDraggingToggle(false);
+          if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
+            (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+          }
+          if (toggleDragRef.current && !toggleDragRef.current.dragged) {
+            setIsOpen(true);
+          }
+          toggleDragRef.current = null;
+        }}
+      >
+        <div className="bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-white font-semibold py-3 px-3 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.8)] transition-colors flex flex-col items-center gap-3 group pointer-events-none">
           <div className="bg-red-600 p-2 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-red-600/20">
             <GraduationCap size={24} className="text-white" />
           </div>
-          <span className="text-[10px] font-bold tracking-widest uppercase opacity-90" style={{ writingMode: 'vertical-rl' }}>Learn Mode</span>
-        </button>
+          <span className="text-[10px] font-bold tracking-widest uppercase opacity-90" style={{ writingMode: 'vertical-rl' }}>GOBLIN</span>
+        </div>
       </div>
     );
   }
@@ -942,7 +988,7 @@ const ChatPanel = ({ aiSettings, stopPropagation, saveChat, chatId, setChatId, i
               </button>
 
               {/* Pop-up Actions Menu */}
-              <div className={`absolute bottom-full left-0 mb-3 bg-neutral-900/95 backdrop-blur-xl border border-neutral-700/60 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] p-2 flex flex-col gap-1 w-[240px] transition-all origin-bottom-left z-50 ${showActions ? 'opacity-100 scale-100 visible pointer-events-auto translate-y-0' : 'opacity-0 scale-95 invisible pointer-events-none translate-y-2'}`}>
+              <div className={`absolute bottom-full left-0 mb-3 bg-neutral-900 border border-neutral-700 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.8)] p-2 flex flex-col gap-1 w-[240px] transition-all origin-bottom-left z-50 ${showActions ? 'opacity-100 scale-100 visible pointer-events-auto translate-y-0' : 'opacity-0 scale-95 invisible pointer-events-none translate-y-2'}`}>
                 
                 <div className="px-3 py-1.5 mb-1">
                   <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Media</span>
