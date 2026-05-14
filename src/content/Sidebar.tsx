@@ -46,6 +46,7 @@ export const Sidebar: React.FC = () => {
   // Draggable Toggle State
   const [togglePosition, setTogglePosition] = useState({ x: window.innerWidth - 60, y: 100 });
   const [isDraggingToggle, setIsDraggingToggle] = useState(false);
+  const [toggleOrientation, setToggleOrientation] = useState<'vertical' | 'horizontal'>('vertical');
   const toggleDragRef = useRef<{ startX: number, startY: number, initialX: number, initialY: number, dragged: boolean } | null>(null);
 
   useEffect(() => {
@@ -150,13 +151,21 @@ export const Sidebar: React.FC = () => {
             setIsOpen(true);
           }
           toggleDragRef.current = null;
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setToggleOrientation(prev => prev === 'vertical' ? 'horizontal' : 'vertical');
         }}
       >
-        <div className="bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-white font-semibold py-3 px-3 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.8)] transition-colors flex flex-col items-center gap-3 group pointer-events-none">
-          <div className="bg-red-600 p-2 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-red-600/20">
+        <div className={`bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-white font-semibold py-3 px-3 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.8)] transition-all group pointer-events-none flex ${toggleOrientation === 'vertical' ? 'flex-col items-center gap-3' : 'flex-row items-center gap-3 px-4 py-2'}`}>
+          <div className="bg-red-600 p-2 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-red-600/20 shrink-0">
             <GraduationCap size={24} className="text-white" />
           </div>
-          <span className="text-[10px] font-bold tracking-widest uppercase opacity-90" style={{ writingMode: 'vertical-rl' }}>GOBLIN</span>
+          <span 
+            className={`text-[10px] font-bold tracking-widest uppercase opacity-90 transition-all ${toggleOrientation === 'vertical' ? 'mt-1' : 'ml-1 text-[12px]'}`} 
+            style={{ writingMode: toggleOrientation === 'vertical' ? 'vertical-rl' : 'horizontal-tb' }}
+          >
+            GOBLIN
+          </span>
         </div>
       </div>
     );
