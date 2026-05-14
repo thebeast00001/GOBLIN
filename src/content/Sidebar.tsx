@@ -151,6 +151,7 @@ export const Sidebar: React.FC = () => {
             setIsOpen(true);
           }
           toggleDragRef.current = null;
+        }}
         onContextMenu={(e) => {
           e.preventDefault();
           setToggleOrientation(prev => prev === 'vertical' ? 'horizontal' : 'vertical');
