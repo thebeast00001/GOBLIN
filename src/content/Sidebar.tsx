@@ -147,7 +147,7 @@ export const Sidebar: React.FC = () => {
           if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
             (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
           }
-          if (toggleDragRef.current && !toggleDragRef.current.dragged) {
+          if (toggleDragRef.current && !toggleDragRef.current.dragged && e.button === 0) {
             setIsOpen(true);
           }
           toggleDragRef.current = null;
