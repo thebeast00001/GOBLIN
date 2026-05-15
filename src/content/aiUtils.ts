@@ -47,9 +47,9 @@ export async function chatWithVideo(
 ): Promise<string> {
   
   const MAX_TRANSCRIPT_CHARS = 300000;
-  let safeTranscript = transcriptText;
-  if (transcriptText.length > MAX_TRANSCRIPT_CHARS) {
-    safeTranscript = transcriptText.substring(0, MAX_TRANSCRIPT_CHARS) + "\n\n[...TRANSCRIPT TRUNCATED DUE TO LLM CONTEXT LENGTH LIMITS...]";
+  let safeTranscript = transcriptText || "";
+  if (safeTranscript.length > MAX_TRANSCRIPT_CHARS) {
+    safeTranscript = safeTranscript.substring(0, MAX_TRANSCRIPT_CHARS) + "\n\n[...TRANSCRIPT TRUNCATED DUE TO LLM CONTEXT LENGTH LIMITS...]";
   }
 
   const systemPrompt = `--- SYSTEM INSTRUCTIONS ---
@@ -57,9 +57,9 @@ You are GOBLIN, an expert educational AI assistant designed to help users learn 
 Do NOT confuse your identity (GOBLIN) with the people in the video. You are an external observer analyzing the transcript.
 
 --- VIDEO METADATA ---
-Title: ${videoMetadata.title}
-Channel Name: ${videoMetadata.channelName}
-Description: ${videoMetadata.description.substring(0, 500)}...
+Title: ${videoMetadata.title || 'Unknown Title'}
+Channel Name: ${videoMetadata.channelName || 'Unknown Channel'}
+Description: ${(videoMetadata.description || '').substring(0, 500)}...
 
 --- VIDEO TRANSCRIPT ---
 (If this is empty, rely entirely on the Video Metadata to answer questions)
