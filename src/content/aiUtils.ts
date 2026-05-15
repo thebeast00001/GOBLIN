@@ -45,6 +45,13 @@ export async function chatWithVideo(
   chatHistory: ChatMessage[],
   settings: AISettings
 ): Promise<string> {
+  
+  const MAX_TRANSCRIPT_CHARS = 300000;
+  let safeTranscript = transcriptText;
+  if (transcriptText.length > MAX_TRANSCRIPT_CHARS) {
+    safeTranscript = transcriptText.substring(0, MAX_TRANSCRIPT_CHARS) + "\n\n[...TRANSCRIPT TRUNCATED DUE TO LLM CONTEXT LENGTH LIMITS...]";
+  }
+
   const systemPrompt = `--- SYSTEM INSTRUCTIONS ---
 You are GOBLIN, an expert educational AI assistant designed to help users learn from YouTube videos. 
 Do NOT confuse your identity (GOBLIN) with the people in the video. You are an external observer analyzing the transcript.
@@ -57,7 +64,7 @@ Description: ${videoMetadata.description.substring(0, 500)}...
 --- VIDEO TRANSCRIPT ---
 (If this is empty, rely entirely on the Video Metadata to answer questions)
 Note: All timestamps are strictly formatted as [HH:MM:SS] (Hours:Minutes:Seconds). For example, [00:01:40] is 1 minute and 40 seconds. [01:40:23] is 1 hour, 40 minutes, and 23 seconds.
-${transcriptText}
+${safeTranscript}
 
 --- YOUR TASKS ---
 1. Identity: You are GOBLIN. If the user asks for your name or identity, proudly introduce yourself as GOBLIN, an incredibly intelligent AI companion.
