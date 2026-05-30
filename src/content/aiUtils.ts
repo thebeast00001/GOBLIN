@@ -194,28 +194,42 @@ async function callClaudeChat(system: string, history: ChatMessage[], settings: 
   return data.content[0].text;
 }
 
-async function callOpenRouterChat(system: string, history: ChatMessage[], settings: AISettings) {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${settings.apiKey}`,
-      'HTTP-Referer': 'https://github.com/goblin-extension',
-      'X-Title': 'GOBLIN Learn Mode'
-    },
-    body: JSON.stringify({
-      model: settings.model || 'google/gemini-1.5-pro',
-      messages: formatMessagesForOpenAI(system, history)
-    })
-  });
+async function callOpenRouterChat(system: string, history: ChatMessage[], settings: AISettings, retries = 2): Promise<string> {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${settings.apiKey}`,
+        'HTTP-Referer': 'https://github.com/goblin-extension',
+        'X-Title': 'GOBLIN'
+      },
+      body: JSON.stringify({
+        model: settings.model || 'google/gemini-2.5-flash',
+        messages: formatMessagesForOpenAI(system, history),
+        route: 'fallback' // Tells OpenRouter to automatically fallback to other providers if the primary one fails
+      })
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'OpenRouter API Error');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || `HTTP ${response.status} Error`);
+    }
+
+    const data = await response.json();
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error("Invalid response payload from OpenRouter.");
+    }
+    return data.choices[0].message.content;
+  } catch (err: any) {
+    const errMsg = err.message || '';
+    if (retries > 0 && (errMsg.toLowerCase().includes('provider') || errMsg.toLowerCase().includes('timeout') || errMsg.includes('502'))) {
+      console.warn(`[OpenRouter] Upstream provider error encountered. Retrying... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return callOpenRouterChat(system, history, settings, retries - 1);
+    }
+    throw new Error(`OpenRouter Model Error: ${errMsg}. If this persists, please switch to a different model in Settings.`);
   }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
 
 async function callOllamaChat(system: string, history: ChatMessage[], settings: AISettings) {
