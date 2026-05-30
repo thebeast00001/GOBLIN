@@ -213,7 +213,14 @@ async function callOpenRouterChat(system: string, history: ChatMessage[], settin
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || `HTTP ${response.status} Error`);
+      const errorMsg = errorData.error?.message || '';
+      
+      // Check for common billing/credit errors
+      if (response.status === 402 || errorMsg.toLowerCase().includes('credit') || errorMsg.toLowerCase().includes('balance') || errorMsg.toLowerCase().includes('payment')) {
+        throw new Error("❌ INSUFFICIENT CREDITS: This is a premium model. Please add credits to your OpenRouter account, or switch to a 'free' model in the Settings tab.");
+      }
+      
+      throw new Error(errorMsg || `HTTP ${response.status} Error`);
     }
 
     const data = await response.json();
@@ -223,12 +230,19 @@ async function callOpenRouterChat(system: string, history: ChatMessage[], settin
     return data.choices[0].message.content;
   } catch (err: any) {
     const errMsg = err.message || '';
-    if (retries > 0 && (errMsg.toLowerCase().includes('provider') || errMsg.toLowerCase().includes('timeout') || errMsg.includes('502'))) {
+    
+    // Don't retry if we know it's a credit issue
+    if (errMsg.includes('INSUFFICIENT CREDITS')) {
+      throw err;
+    }
+
+    if (retries > 0 && (errMsg.toLowerCase().includes('provider') || errMsg.toLowerCase().includes('timeout') || errMsg.includes('502') || errMsg.includes('fetch'))) {
       console.warn(`[OpenRouter] Upstream provider error encountered. Retrying... (${retries} attempts left)`);
       await new Promise(resolve => setTimeout(resolve, 1500));
       return callOpenRouterChat(system, history, settings, retries - 1);
     }
-    throw new Error(`OpenRouter Model Error: ${errMsg}. If this persists, please switch to a different model in Settings.`);
+    
+    throw new Error(`OpenRouter Model Error: ${errMsg}. If this persists, please switch to a different model in Settings (e.g. google/gemini-2.5-pro-free).`);
   }
 }
 
